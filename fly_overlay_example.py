@@ -16,6 +16,19 @@ FLAP_HZ = 12.0  # aleteos por segundo (independiente del fps de la cáqmara)
 
 @dataclass
 class Fly:
+    """Moving fly with inertia, smooth random acceleration and wall bounces.
+
+    Physics only (no OpenCV), so it can be tested without a camera.
+
+    Attributes:
+        x, y: Position in pixels.
+        vx, vy: Velocity in pixels/second.
+        ax, ay: Current acceleration in pixels/second^2.
+        hold_left: Seconds left before a new random acceleration is chosen.
+        rng: Per-instance random generator (pass a seeded one for
+            reproducible trajectories).
+    """
+
     x: float
     y: float
     vx: float = 0.0
@@ -26,12 +39,18 @@ class Fly:
     rng: random.Random = field(default_factory=random.Random, repr=False)
 
     def _pick_accel(self):
+        """Choose a random acceleration direction and hold it for ACCEL_HOLD_S."""
         angle = self.rng.uniform(0, 2 * math.pi)
         self.ax = MAX_ACCEL * math.cos(angle)
         self.ay = MAX_ACCEL * math.sin(angle)
         self.hold_left = ACCEL_HOLD_S
 
     def step(self, dt: float, width: int, height: int):
+        """Advance the simulation by dt seconds inside a width x height area.
+
+        Applies acceleration, drag and the MAX_SPEED limit, then moves the fly
+        and reflects its velocity when it touches a border.
+        """
         self.hold_left -= dt
         if self.hold_left <= 0:
             self._pick_accel()
