@@ -8,3 +8,11 @@ dependencies = [
     "mediapipe>=1.0.1",
     "opencv-python>=5.0.0.93",
 ]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["fly_swat"]

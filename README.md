@@ -5,5 +5,6 @@ Ejemplos:
 - `simple_webcam_capture.py`: captura de webcam.
 - `mediapipe_handtracking.py`: seguimiento de manos.
 - `fly_overlay_example.py`: mosca (círculo animado) moviéndose sobre la webcam. `q` para salir.
+- `src/fly_swat/game.py`: física de movimiento de la mosca, independiente de la cámara.
 
     uv run fly_overlay_example.py
