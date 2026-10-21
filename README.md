@@ -1,10 +1,10 @@
-﻿# Fly Swat
+# Fly Swat
 
-Ejemplos:
+Examples:
 
-- `simple_webcam_capture.py`: captura de webcam.
-- `mediapipe_handtracking.py`: seguimiento de manos.
-- `fly_overlay_example.py`: mosca (círculo animado) moviéndose sobre la webcam. `q` para salir.
-- `src/fly_swat/game.py`: física de movimiento de la mosca, independiente de la cámara.
+- `simple_webcam_capture.py`: webcam capture.
+- `mediapipe_handtracking.py`: hand tracking.
+- `fly_overlay_example.py`: fly (animated circle) moving over the webcam feed. Press `q` to quit.
+- `src/fly_swat/game.py`: fly movement physics, independent of the camera.
 
     uv run fly_overlay_example.py

@@ -5,17 +5,17 @@ import cv2
 
 from fly_swat.game import FLY_RADIUS, Fly
 
-# Parámetros de animación
-FLAP_HZ = 12.0  # aleteos por segundo (independiente del fps de la cáqmara)
+# Animation parameters
+FLAP_HZ = 12.0  # wing flaps per second (independent of the camera fps)
 
 
 def flap_frame(t: float, n_frames: int = 2) -> int:
-    """Índice del frame de animación según el tiempo; vale para sprites reales."""
+    """Animation frame index for a given time; also valid for real sprites."""
     return int(t * FLAP_HZ) % n_frames
 
 
 def draw_fly(frame, fly: Fly, frame_index: int):
-    """Sprite provisional: cuerpo circular y alas que alternan arriba/abajo."""
+    """Placeholder sprite: circular body and wings alternating up/down."""
     center = (int(fly.x), int(fly.y))
     heading = math.degrees(math.atan2(fly.vy, fly.vx))
     wing_len = int(FLY_RADIUS * 1.2)
@@ -42,7 +42,7 @@ def main():
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
-            print("No se pudo recibir el fotograma.")
+            print("Could not receive a frame.")
             break
 
         frame = cv2.flip(frame, 1)

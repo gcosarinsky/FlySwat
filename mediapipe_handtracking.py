@@ -4,20 +4,20 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-# 1. Configurar las opciones del Hand Landmarker moderno
+# 1. Configure the modern Hand Landmarker options
 base_options = python.BaseOptions(
     model_asset_path=r"D:\HandTracking_example\models\hand_landmarker.task"
 )
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
-    running_mode=vision.RunningMode.VIDEO,  # Modo específico para procesamiento frame a frame
+    running_mode=vision.RunningMode.VIDEO,  # Mode intended for frame-by-frame processing
     num_hands=2,
     min_hand_detection_confidence=0.7,
     min_hand_presence_confidence=0.7,
     min_tracking_confidence=0.7
 )
 
-# 2. Inicializar el detector y la cámara
+# 2. Initialize the detector and the camera
 detector = vision.HandLandmarker.create_from_options(options)
 cap = cv2.VideoCapture(0)
 
@@ -26,43 +26,43 @@ while cap.isOpened():
     if not ret:
         break
 
-    # Voltear en espejo para comodidad del usuario
+    # Mirror the image for the user's convenience
     frame = cv2.flip(frame, 1)
     h, w, _ = frame.shape
 
-    # Convertir de BGR (OpenCV) a RGB (MediaPipe)
+    # Convert from BGR (OpenCV) to RGB (MediaPipe)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
-    # MediaPipe moderno requiere convertir la imagen a su propio formato de objeto
+    # Modern MediaPipe requires wrapping the image in its own object format
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
     
-    # Calcular una marca de tiempo en milisegundos (obligatoria en modo VIDEO)
+    # Compute a timestamp in milliseconds (required in VIDEO mode)
     timestamp_ms = int(time.time() * 1000)
 
-    # 3. Procesar el frame
+    # 3. Process the frame
     detection_result = detector.detect_for_video(mp_image, timestamp_ms)
 
-    # 4. Dibujar los resultados si se detectan manos
+    # 4. Draw the results if hands are detected
     if detection_result.hand_landmarks:
         for hand_landmarks in detection_result.hand_landmarks:
-            # Dibujar puntos individuales
+            # Draw individual landmarks
             for landmark in hand_landmarks:
                 cx, cy = int(landmark.x * w), int(landmark.y * h)
                 cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
 
-            # Obtener las coordenadas del dedo índice (Landmark índice 8)
+            # Get the index fingertip coordinates (landmark index 8)
             index_finger_tip = hand_landmarks[8]
             x_idx = index_finger_tip.x * w
             y_idx = index_finger_tip.y * h
             
-            # Aquí puedes usar x_idx e y_idx para el control de tu juego
+            # Use x_idx and y_idx here to control your game
 
-    # Mostrar ventana
-    cv2.imshow("Hand Tracking Moderno", frame)
+    # Show window
+    cv2.imshow("Modern Hand Tracking", frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
-# 5. Limpieza limpia de recursos
+# 5. Clean up resources
 detector.close()
 cap.release()
 cv2.destroyAllWindows()
