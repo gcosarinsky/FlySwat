@@ -2,8 +2,14 @@ import math
 import random
 from dataclasses import dataclass, field
 
+from fly_swat.gestures import HandState, distance
+
 # Fly movement parameters.
 FLY_RADIUS = 18
+# A pinch captures the fly when its point is within this distance of the fly.
+CAPTURE_RADIUS = FLY_RADIUS + 12
+# After a capture the fly reappears at least this far from the hand.
+RESPAWN_MIN_DISTANCE = 4 * CAPTURE_RADIUS
 MAX_SPEED = 400.0
 MAX_ACCEL = 900.0
 ACCEL_HOLD_S = 0.4
@@ -69,3 +75,59 @@ class Fly:
         if self.y < r or self.y > height - r:
             self.y = min(max(self.y, r), height - r)
             self.vy = -self.vy
+
+
+@dataclass(frozen=True)
+class CaptureEvent:
+    """The fly was captured at (x, y)."""
+
+    x: float
+    y: float
+
+
+@dataclass
+class Game:
+    """Fly, capture rule and score. No camera or rendering dependencies.
+
+    A capture needs a closed pinch within CAPTURE_RADIUS of the fly. After a
+    capture the pinch must be released before another one can count.
+    """
+
+    fly: Fly
+    width: int
+    height: int
+    score: int = 0
+    pinch_held: bool = False
+
+    def pinch_in_range(self, hand: HandState | None) -> bool:
+        """True if the hand's pinch point is within the capture radius."""
+        return hand is not None and (
+            distance(hand.pinch_point, (self.fly.x, self.fly.y)) <= CAPTURE_RADIUS
+        )
+
+    def step(self, hand: HandState | None, dt: float) -> list[CaptureEvent]:
+        """Advance the fly and apply the capture rule for the active hand."""
+        self.fly.step(dt, self.width, self.height)
+
+        if hand is None or not hand.is_pinching:
+            self.pinch_held = False
+            return []
+        if self.pinch_held or not self.pinch_in_range(hand):
+            return []
+
+        self.pinch_held = True
+        self.score += 1
+        event = CaptureEvent(self.fly.x, self.fly.y)
+        self._respawn(hand.pinch_point)
+        return [event]
+
+    def _respawn(self, away_from: tuple[float, float]):
+        """Move the fly to a random spot away from the given point."""
+        r = FLY_RADIUS
+        for _ in range(20):
+            x = self.fly.rng.uniform(r, self.width - r)
+            y = self.fly.rng.uniform(r, self.height - r)
+            if distance((x, y), away_from) >= RESPAWN_MIN_DISTANCE:
+                break
+        self.fly.x, self.fly.y = x, y
+        self.fly.vx = self.fly.vy = 0.0

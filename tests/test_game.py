@@ -1,7 +1,75 @@
 import random
 import unittest
 
-from fly_swat.game import MAX_SPEED, Fly
+from fly_swat.game import CAPTURE_RADIUS, MAX_SPEED, Fly, Game
+from fly_swat.gestures import HandState
+
+
+def hand_at(x, y, pinching):
+    return HandState(
+        track_id=0,
+        thumb_tip=(x, y),
+        index_tip=(x, y),
+        pinch_point=(x, y),
+        ref_size=100.0,
+        ratio=0.1 if pinching else 1.0,
+        is_pinching=pinching,
+    )
+
+
+def make_game():
+    fly = Fly(300, 200, rng=random.Random(1), hold_left=100)
+    return Game(fly, 640, 480)
+
+
+class CaptureTests(unittest.TestCase):
+    def test_open_pinch_does_not_capture(self):
+        game = make_game()
+
+        events = game.step(hand_at(300, 200, False), 0.001)
+
+        self.assertEqual((events, game.score), ([], 0))
+
+    def test_pinch_outside_radius_does_not_capture(self):
+        game = make_game()
+
+        events = game.step(hand_at(300 + CAPTURE_RADIUS + 20, 200, True), 0.001)
+
+        self.assertEqual((events, game.score), ([], 0))
+
+    def test_no_hand_does_not_capture(self):
+        game = make_game()
+
+        self.assertEqual(game.step(None, 0.001), [])
+
+    def test_closed_pinch_in_range_captures_once_while_held(self):
+        game = make_game()
+
+        first = game.step(hand_at(300, 200, True), 0.001)
+        game.fly.x, game.fly.y = 300, 200
+        second = game.step(hand_at(300, 200, True), 0.001)
+
+        self.assertEqual(len(first), 1)
+        self.assertEqual(second, [])
+        self.assertEqual(game.score, 1)
+
+    def test_releasing_pinch_allows_another_capture(self):
+        game = make_game()
+        game.step(hand_at(300, 200, True), 0.001)
+        game.step(hand_at(300, 200, False), 0.001)
+        game.fly.x, game.fly.y = 300, 200
+
+        events = game.step(hand_at(300, 200, True), 0.001)
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(game.score, 2)
+
+    def test_fly_respawns_away_from_hand_after_capture(self):
+        game = make_game()
+
+        game.step(hand_at(300, 200, True), 0.001)
+
+        self.assertFalse(game.pinch_in_range(hand_at(300, 200, True)))
 
 
 class FlyPhysicsTests(unittest.TestCase):
