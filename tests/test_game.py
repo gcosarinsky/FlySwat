@@ -32,8 +32,10 @@ class CaptureTests(unittest.TestCase):
 
     def test_pinch_outside_radius_does_not_capture(self):
         game = make_game()
+        x = 300 + CAPTURE_RADIUS + 20
+        game.step(hand_at(x, 200, False), 0.001)
 
-        events = game.step(hand_at(300 + CAPTURE_RADIUS + 20, 200, True), 0.001)
+        events = game.step(hand_at(x, 200, True), 0.001)
 
         self.assertEqual((events, game.score), ([], 0))
 
@@ -42,8 +44,9 @@ class CaptureTests(unittest.TestCase):
 
         self.assertEqual(game.step(None, 0.001), [])
 
-    def test_closed_pinch_in_range_captures_once_while_held(self):
+    def test_closing_pinch_in_range_captures_once(self):
         game = make_game()
+        game.step(hand_at(300, 200, False), 0.001)
 
         first = game.step(hand_at(300, 200, True), 0.001)
         game.fly.x, game.fly.y = 300, 200
@@ -53,19 +56,37 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(second, [])
         self.assertEqual(game.score, 1)
 
-    def test_releasing_pinch_allows_another_capture(self):
+    def test_pinch_already_closed_when_reaching_fly_does_not_capture(self):
         game = make_game()
+        far = 300 + CAPTURE_RADIUS + 100
+        game.step(hand_at(far, 200, True), 0.001)
+
+        events = game.step(hand_at(300, 200, True), 0.001)
+
+        self.assertEqual((events, game.score), ([], 0))
+
+    def test_releasing_and_closing_again_in_range_captures(self):
+        game = make_game()
+        game.step(hand_at(300 + CAPTURE_RADIUS + 100, 200, True), 0.001)
         game.step(hand_at(300, 200, True), 0.001)
         game.step(hand_at(300, 200, False), 0.001)
-        game.fly.x, game.fly.y = 300, 200
 
         events = game.step(hand_at(300, 200, True), 0.001)
 
         self.assertEqual(len(events), 1)
-        self.assertEqual(game.score, 2)
+
+    def test_newly_active_pinching_hand_does_not_capture(self):
+        game = make_game()
+        game.step(hand_at(300, 200, False), 0.001)
+        other = HandState(7, (300, 200), (300, 200), (300, 200), 100.0, 0.1, True)
+
+        events = game.step(other, 0.001)
+
+        self.assertEqual(events, [])
 
     def test_fly_respawns_away_from_hand_after_capture(self):
         game = make_game()
+        game.step(hand_at(300, 200, False), 0.001)
 
         game.step(hand_at(300, 200, True), 0.001)
 

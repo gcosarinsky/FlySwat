@@ -4,7 +4,7 @@ Usage:
     uv run pinch_debug.py [--camera 0] [--model PATH]
 
 Keys: q quit | a/z close threshold +/- | s/x open threshold +/- |
-      g toggle fly and capture overlay.
+      g toggle fly and capture overlay | [ / ] fly speed -/+ | f freeze fly.
 """
 
 import argparse
@@ -31,6 +31,8 @@ ORANGE = (0, 140, 255)
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 THRESHOLD_STEP = 0.01
 MIN_THRESHOLD_GAP = 0.02
+SPEED_STEP = 0.1
+MAX_SPEED_SCALE = 1.0
 
 
 def put_text(frame, text, org, color=WHITE, scale=0.5):
@@ -102,6 +104,8 @@ def main():
         raise SystemExit(str(error))
 
     close_ratio, open_ratio = CLOSE_RATIO, OPEN_RATIO
+    speed = 1.0
+    frozen = False
     tracker = HandTracker(close_ratio, open_ratio, CONFIRM_S)
     selector = ActiveHandSelector()
     game = None
@@ -133,7 +137,8 @@ def main():
             active = selector.select(hands, (game.fly.x, game.fly.y), dt)
 
             if show_game:
-                if game.step(active, dt):
+                sim_dt = 0.0 if frozen else dt * speed
+                if game.step(active, sim_dt):
                     captures_flash = 0.4
                 draw_fly(frame, game, game.pinch_in_range(active))
             captures_flash = max(0.0, captures_flash - dt)
@@ -149,7 +154,8 @@ def main():
                 (10, 40),
             )
             if show_game:
-                put_text(frame, f"Captures: {game.score}", (10, 62), YELLOW, 0.6)
+                speed_text = "FROZEN" if frozen else f"{speed:.1f}x"
+                put_text(frame, f"Captures: {game.score}  Fly speed: {speed_text} ([ ] f)", (10, 62), YELLOW, 0.6)
             if captures_flash > 0:
                 put_text(frame, "CAPTURED!", (w // 2 - 80, 60), GREEN, 1.0)
 
@@ -159,6 +165,12 @@ def main():
                 break
             if key == ord("g"):
                 show_game = not show_game
+            elif key == ord("f"):
+                frozen = not frozen
+            elif key == ord("["):
+                speed = max(round(speed - SPEED_STEP, 2), 0.0)
+            elif key == ord("]"):
+                speed = min(round(speed + SPEED_STEP, 2), MAX_SPEED_SCALE)
             changed = True
             if key == ord("a"):
                 close_ratio = min(close_ratio + THRESHOLD_STEP, open_ratio - MIN_THRESHOLD_GAP)

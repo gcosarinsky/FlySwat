@@ -110,15 +110,15 @@ Per-frame detections are new objects, so keep the logical identity of a hand thr
 
 A capture happens when both hold:
 
-- The active hand is pinching.
-- Its interaction point is within the capture radius around the fly center.
+- The active hand's pinch **closes** (open -> closed transition), not merely "is closed".
+- Its interaction point is within the capture radius around the fly center at that moment.
 
 - The capture radius is a game parameter, related to the fly's visual radius plus a user tolerance.
 - The core reports the capture as an event. It does not draw or read the camera.
-- A capture is registered once. The pinch must be released before another capture can count.
+- A pinch that was already closed when the fly came close does not count; it must be released and closed again. This also prevents repeated captures while the pinch is held, and a newly selected hand cannot capture on its first frame.
 - `Fly.step` keeps handling movement. The interaction must not depend on OpenCV or MediaPipe.
 
-**Acceptance:** an open pinch or a pinch outside the radius does not capture; a closed pinch inside the radius produces exactly one capture event.
+**Acceptance:** an open pinch, a pinch outside the radius, or a pinch already closed before reaching the fly does not capture; closing the pinch inside the radius produces exactly one capture event.
 
 ### 5. Integration
 

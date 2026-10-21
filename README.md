@@ -8,7 +8,7 @@ Examples:
 - `src/fly_swat/game.py`: fly movement physics and capture rule, independent of the camera.
 - `src/fly_swat/gestures.py`: pinch detection (hysteresis, debouncing) and active hand selection.
 - `src/fly_swat/vision.py`: webcam and MediaPipe hand landmark extraction.
-- `pinch_debug.py`: shows thumb/index tips, pinch state (OPEN/CLOSED), thresholds and the capture overlay. Keys: `q` quit, `a`/`z` close threshold, `s`/`x` open threshold, `g` toggle fly.
+- `pinch_debug.py`: shows thumb/index tips, pinch state (OPEN/CLOSED), thresholds and the capture overlay. Keys: `q` quit, `a`/`z` close threshold, `s`/`x` open threshold, `g` toggle fly, `[`/`]` fly speed, `f` freeze fly.
 
     uv run fly_overlay_example.py
     uv run pinch_debug.py

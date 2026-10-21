@@ -89,15 +89,17 @@ class CaptureEvent:
 class Game:
     """Fly, capture rule and score. No camera or rendering dependencies.
 
-    A capture needs a closed pinch within CAPTURE_RADIUS of the fly. After a
-    capture the pinch must be released before another one can count.
+    A capture needs the pinch to close (open -> closed) while within
+    CAPTURE_RADIUS of the fly. A pinch that was already closed when the fly
+    came close does not count; it must be released and closed again.
     """
 
     fly: Fly
     width: int
     height: int
     score: int = 0
-    pinch_held: bool = False
+    _prev_track_id: int | None = field(default=None, repr=False)
+    _prev_pinching: bool = field(default=False, repr=False)
 
     def pinch_in_range(self, hand: HandState | None) -> bool:
         """True if the hand's pinch point is within the capture radius."""
@@ -109,13 +111,21 @@ class Game:
         """Advance the fly and apply the capture rule for the active hand."""
         self.fly.step(dt, self.width, self.height)
 
-        if hand is None or not hand.is_pinching:
-            self.pinch_held = False
-            return []
-        if self.pinch_held or not self.pinch_in_range(hand):
+        if hand is None:
+            self._prev_track_id = None
+            self._prev_pinching = False
             return []
 
-        self.pinch_held = True
+        # A newly active hand has no previous state, so it cannot "close".
+        was_pinching = (
+            self._prev_pinching if hand.track_id == self._prev_track_id else hand.is_pinching
+        )
+        self._prev_track_id = hand.track_id
+        self._prev_pinching = hand.is_pinching
+
+        if was_pinching or not hand.is_pinching or not self.pinch_in_range(hand):
+            return []
+
         self.score += 1
         event = CaptureEvent(self.fly.x, self.fly.y)
         self._respawn(hand.pinch_point)
